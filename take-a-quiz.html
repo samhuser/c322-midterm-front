@@ -4,8 +4,169 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
+  <link rel="stylesheet" href="navbar.css">
+  <link rel="stylesheet" href="general.css">
+  <link rel="stylesheet" href="cards.css">
+  <link rel="stylesheet" href="make-a-quiz.css"> 
+  <link rel="stylesheet" href="quiz.css"> 
+
 </head>
 <body>
-  
+  <ul id = "topnav" class="topnav">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="add-question.html">Add questions</a></li>
+    <li><a href="make-a-quiz.html">Create a quiz</a></li>
+    <li><a class="active" href="take-a-quiz.html">Take a quiz</a></li>
+    <li class="right"><a href="#about">About</a></li>
+  </ul>
+  <div>
+    <h4 id = "text"> Here are the list of all available quizzes. Click on a quiz to start taking the quiz</h4>
+    <h4 id = "result"></h4>
+    <h4 id = "score"></h4>
+
+    <div id="quizList" class="cards"></div>
+  </div>
+  <div id="quiz-container" class="container"></div>
+
+  <script>
+    let currentIndex = 0;
+    let currentQuiz;
+    let answers = [];
+    let quizzes = [];
+    let score = 0;
+    let host = "https://midterm-csvm.onrender.com";
+    displayQuizzes();
+    async function getAllQuizzes(){
+      let response = await fetch(host + "/quizzes");
+      let result = await response.json();
+      return result;
+    }
+
+    async function displayQuizzes(){
+      let list  = document.getElementById("quizList");
+      if (quizzes.length == 0) {
+        quizzes = await getAllQuizzes();
+      }
+      for(let quiz of quizzes){
+        let div = document.createElement("div");
+        div.className = "card";
+        div.onclick = function (){
+          loadQuiz(quiz);
+        }
+      let innerHtml = `
+      <div class="container">
+      <h4><b>${quiz.id}</b></h4> 
+      <p>${quiz.title}</p>
+      <p>${quiz.questionIds.length} Questions </p>
+    </div>
+      `
+      div.innerHTML = innerHtml;
+      div.id = quiz.id;
+      list.appendChild(div);
+      }
+    }
+
+    async function loadQuiz(quiz){
+      try {
+          currentQuiz = quiz;
+          answers.fill(currentQuiz.questions.length);
+          const response = await fetch("quiz.html?");
+          const data = await response.text();
+          document.getElementById("quiz-container").innerHTML = data;
+          let list  = document.getElementById("quizList");
+          let text  = document.getElementById("text");
+          let navbar = document.getElementById("topnav");
+          document.getElementById("previousButton").onclick = function() {
+             prevQuestion();
+            };
+          document.getElementById("nextButton").onclick = function() {
+             nextQuestion();
+           };
+
+          text.className = "hide";
+          list.className = "hide";
+          navbar.className = "hide";
+          displayQuestions(quiz);
+      } catch (error) {
+        console.error('Error loading quiz:', error);
+      }
+    }
+
+    async function displayQuestions(quiz){
+      let list = document.getElementById("questionContainer");
+      list.innerHTML = "";
+      let container = document.createElement("div");
+
+      let currentQuestion = quiz.questions[currentIndex];
+      document.getElementById("questionsCount").innerHTML = "Question "+(currentIndex+1)+" out of "+ quiz.questions.length;
+      container.className = "card";
+      container.innerHTML = `
+      <img src="https://midterm-csvm.onrender.com/questions/${currentQuestion.id}/image" alt="question" style="width:100%">
+      <div class="container">
+      <h4><b>${currentQuestion.id}</b></h4> 
+      <p>${currentQuestion.description}</p>
+      <form>
+          <input type="radio" id="q${currentQuestion.id}ptionA" name="q2Answer" value="A">
+          <label for="q${currentQuestion.id}ptionA">${currentQuestion.choices[0]}</label><br>
+
+          <input type="radio" id="q${currentQuestion.id}ptionB" name="q2Answer" value="B">
+          <label for="q${currentQuestion.id}ptionB">${currentQuestion.choices[1]}</label><br>
+
+          <input type="radio" id="q${currentQuestion.id}ptionC" name="q2Answer" value="C">
+          <label for="q${currentQuestion.id}ptionC">${currentQuestion.choices[2]}</label><br>       
+      </form> 
+    </div>`
+    list.append(container);
+    }
+    
+    function checkSelected(currentIndex){
+      let currentQuestion = currentQuiz.questions[currentIndex];
+      
+      if(document.getElementById('q'+currentQuestion.id+'ptionA').checked){
+          answers[currentIndex] = currentQuestion.choices[0];
+      }else if(document.getElementById('q'+currentQuestion.id+'ptionB').checked){
+          answers[currentIndex] = currentQuestion.choices[1];
+      }else if(document.getElementById('q'+currentQuestion.id+'ptionC').checked){
+          answers[currentIndex] = currentQuestion.choices[2];
+      }
+    }
+    function nextQuestion(){
+      if(currentIndex < currentQuiz.questionIds.length-1){
+        checkSelected(currentIndex);
+        currentIndex++;
+        displayQuestions(currentQuiz);
+      }else{
+        checkSelected(currentIndex);
+        checkAnswers(currentQuiz);
+      }
+    }
+    
+    function prevQuestion(){
+      if(currentIndex != 0){
+        checkSelected(currentIndex);
+        currentIndex--;
+        displayQuestions(currentQuiz);
+      }
+    }
+
+    function checkAnswers(currentQuiz){
+      console.log(answers);
+      console.log(currentQuiz.questions.length);
+      for(let i = 0; i< currentQuiz.questions.length; i++){
+        console.log(answers[i]);
+        console.log(currentQuiz.questions[i].answer)
+        if(currentQuiz.questions[i].answer == answers[i]){
+          console.log(true)
+          score++;
+        }
+      }
+      document.getElementById("topnav").className = "topnav";
+      document.getElementById("quiz-container").className = "hide";
+      document.getElementById("result").innerHTML = "You completed the quiz "+currentQuiz.title;
+      document.getElementById("score").innerHTML = "You scored "+score+ " out of "+ currentQuiz.questions.length;
+
+    }
+    
+  </script>
 </body>
 </html>

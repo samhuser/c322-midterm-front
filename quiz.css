@@ -4,14 +4,14 @@
     margin-left: 30vw;
     margin-right: 30vw;
 }
-
 .controls {
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
-
 .hide {
     visibility: hidden;
     display: none;
 }
+
 
